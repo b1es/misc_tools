@@ -66,6 +66,7 @@ def get_minmax4voxel(cfg,lattice=False,get_origin_spacing=False):
     else:
         return (xmin,xmax),(ymin,ymax),(zmin,zmax)
 
+    
 def prepare_vtk_data(property_name, number_of_components, numpy_data):
     arr = numpy_support.numpy_to_vtk(num_array=numpy_data.ravel(), deep=True, array_type=vtk.VTK_FLOAT)
     arr.SetName(property_name)

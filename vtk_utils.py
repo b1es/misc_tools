@@ -30,7 +30,7 @@ def vtk2npy(vtkfile,verbose=False,rho_name='rho',v_name='v'):
     data_rho = data_rho.reshape(dims[2], dims[1], dims[0])
     data_v = data_v.reshape(dims[2], dims[1], dims[0],3)
     data_v = np.rollaxis(data_v,3,0)
-    # data = data.transpose(2,1,0)
+    # alt.  data = data.transpose(2,1,0)
     
     return (data_rho,data_v)
 
@@ -132,3 +132,165 @@ def probe_vti(vti_file='output.vti',point_data=[[0.050640, 0.027959, 0.05213]],f
         if shape2d:
             return v_interp_on_grid.reshape(shape2d)
         return v_interp_on_grid
+
+
+
+def probe_at_dx(du = 0.001, velocity_file=None, stlfile='c0006.stl',  output_fn='surface.vtp',
+                velocity_name = 'v [m/s]',
+                write=False, mu=1.0,move_mesh=False,sign=1):
+    '''
+    Equidistant points from stl in normal direction
+    '''
+    stl = stlImageActor(stlfile)
+    vertices = numpy_support.vtk_to_numpy(stl.GetPoints().GetData())
+    indices = numpy_support.vtk_to_numpy(stl.GetPolys().GetData()).reshape(-1, 4)[:, 1:4]
+    merged = vtk.vtkPolyData()
+    merged.DeepCopy(stl)
+    
+    vel_data = getFileReaderOutput(velocity_file)
+
+    # Compute normals to vertices
+    normalGenerator = vtk.vtkPolyDataNormals()
+    normalGenerator.SetInputData(merged)
+    normalGenerator.ComputePointNormalsOn()
+    normalGenerator.ComputeCellNormalsOff()
+    normalGenerator.SetSplitting(0)
+    normalGenerator.SetConsistency(0)
+    normalGenerator.Update()
+
+    merged = normalGenerator.GetOutput()
+    normals = numpy_support.vtk_to_numpy(merged.GetPointData().GetNormals())
+
+    
+    points = vtk.vtkPoints()
+    pointsPolyData = vtk.vtkPolyData()
+
+    for normal, pos in zip(normals, vertices):
+        points.InsertNextPoint(pos + normal * (-sign*du))
+
+    pointsPolyData.SetPoints(points)
+    probe_filter = vtk.vtkProbeFilter()
+    probe_filter.SetInputData(pointsPolyData)
+    probe_filter.SetSourceData(vel_data)
+    probe_filter.GetOutputPort()
+    probe_filter.Update()
+
+    probed_data = probe_filter.GetOutput().GetPointData()
+
+
+    if isinstance( velocity_name, str):
+        v_vec = numpy_support.vtk_to_numpy(probed_data.GetArray(velocity_name))
+    elif isinstance( velocity_name, list):
+        vx = numpy_support.vtk_to_numpy(probed_data.GetArray(velocity_name[0]))
+        vy = numpy_support.vtk_to_numpy(probed_data.GetArray(velocity_name[1]))
+        vz = numpy_support.vtk_to_numpy(probed_data.GetArray(velocity_name[2]))
+        v_vec = np.stack((vx, vy, vz), 1).reshape((-1, 3))
+    else:
+        raise NotImplementedError
+        
+
+    print(v_vec.shape)
+
+    velocity = vtk.vtkFloatArray()
+    velocity.SetNumberOfComponents(1)
+    velocity.SetName("X_at_epsilon")
+
+    
+    for v in v_vec:
+
+        if np.max(v) > 1e33 or np.min(v) < -1e33:
+            s = np.array([ 0.00])
+
+        velocity.InsertNextTypedTuple( [v] )
+
+    merged.GetPointData().AddArray(velocity)
+
+    if move_mesh:
+        merged.SetPoints(points)
+        print('moving point by dx inside')
+    
+    merged.Modified()
+    if write:
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName(output_fn)
+        writer.SetInputData(merged)
+        writer.Write()
+        print(output_fn," written")
+
+    return merged
+
+    
+
+
+def stlImageActor(path):
+    reader = vtk.vtkSTLReader()
+    reader.SetFileName(path)
+    reader.Update()
+    return reader.GetOutput()
+
+def vtlImageActor(path):
+    reader = vtk.vtkXMLImageDataReader()
+    reader.SetFileName(path)
+    reader.Update()
+    return reader.GetOutput()
+
+def unstructuredImage(path):
+    reader = vtk.vtkXMLUnstructuredGridReader()
+    reader.SetFileName(path)
+    reader.Update()
+    return reader
+
+def getFileReaderOutput(filename):
+    import os.path
+    _,file_extension = os.path.splitext(filename)
+    
+    if file_extension.endswith(".vti"):
+        reader = vtk.vtkXMLImageDataReader()
+        reader.SetFileName(filename)
+        
+    elif file_extension.endswith(".stl"):
+        reader = vtk.vtkSTLReader()
+        reader.SetFileName(filename)
+        
+    elif file_extension.endswith(".vtp"):
+        reader = vtk.vtkXMLPolyDataReader()
+        reader.SetFileName(filename)
+        
+    elif file_extension.endswith(".vtu"):
+        reader = vtk.vtkXMLUnstructuredGridReader()
+        reader.SetFileName(filename)
+
+    elif file_extension.endswith(".vtk"):
+        reader = vtk.vtkUnstructuredGridReader()
+        reader.SetFileName(filename)
+        reader.ReadAllVectorsOn()
+        reader.ReadAllScalarsOn()
+        
+    reader.Update()
+    return reader.GetOutput()
+
+
+
+
+def scale_and_trans(vtk_data=None, output =  None,
+                    scale = 1000.0, 
+                    deltaxyz = [-14.52326308, 180.637182  , 161.81502267] ):
+    '''
+    Performs scaling (e.g from meters to mm) and translation of the dataset.
+    Note that `vtk_data` is reader.GetOutput()
+    '''
+    transform = vtk.vtkTransform()
+    transform.Scale(scale,scale,scale)
+    transform.Translate(*deltaxyz)
+    transformFilter = vtk.vtkTransformFilter()
+    transformFilter.SetTransform(transform)
+    transformFilter.SetInputData(vtk_data)
+    transformFilter.Update()
+    if output == None:
+        return transformFilter.GetOutput()
+    else:
+        writer = vtk.vtkXMLUnstructuredGridWriter()
+        writer.SetFileName(output)
+        writer.SetInputData(transformFilter.GetOutput())
+        writer.Update()
+        writer.Write()

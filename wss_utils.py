@@ -4,57 +4,14 @@ import os
 
 from vtk.util import numpy_support
 
-def stlImageActor(path):
-    reader = vtk.vtkSTLReader()
-    reader.SetFileName(path)
-    reader.Update()
-    return reader.GetOutput()
+from vtk_utils import stlImageActor, vtlImageActor, unstructuredImage, getFileReaderOutput
 
-def vtlImageActor(path):
-    reader = vtk.vtkXMLImageDataReader()
-    reader.SetFileName(path)
-    reader.Update()
-    return reader.GetOutput()
 
-def unstructuredImage(path):
-    reader = vtk.vtkXMLUnstructuredGridReader()
-    reader.SetFileName(path)
-    reader.Update()
-    return reader
-
-def getFileReaderOutput(filename):
-    import os.path
-    _,file_extension = os.path.splitext(filename)
-    
-    if file_extension.endswith(".vti"):
-        reader = vtk.vtkXMLImageDataReader()
-        reader.SetFileName(filename)
-        
-    elif file_extension.endswith(".stl"):
-        reader = vtk.vtkSTLReader()
-        reader.SetFileName(filename)
-        
-    elif file_extension.endswith(".vtp"):
-        reader = vtk.vtkXMLPolyDataReader()
-        reader.SetFileName(filename)
-        
-    elif file_extension.endswith(".vtu"):
-        reader = vtk.vtkXMLUnstructuredGridReader()
-        reader.SetFileName(filename)
-
-    elif file_extension.endswith(".vtk"):
-        reader = vtk.vtkUnstructuredGridReader()
-        reader.SetFileName(filename)
-        reader.ReadAllVectorsOn()
-        reader.ReadAllScalarsOn()
-        
-    reader.Update()
-    return reader.GetOutput()
 
 
 def project_wss_derivative(du = 0.001, velocity_file=None, stlfile='c0006.stl',  output_fn='surface.vtp',\
                            velocity_name = 'v [m/s]',\
-                           write=False, mu=1.0,move_mesh=False):
+                           write=False, mu=1.0, move_mesh=False, sign=1):
     '''
     Equidistant points from stl in normal direction
     Takes stl and vtu/vti and generates vtp  
@@ -87,7 +44,7 @@ def project_wss_derivative(du = 0.001, velocity_file=None, stlfile='c0006.stl', 
     pointsPolyData = vtk.vtkPolyData()
 
     for normal, pos in zip(normals, vertices):
-        points.InsertNextPoint(pos + normal * (-du))
+        points.InsertNextPoint(pos + normal * (-du*sign))
 
     pointsPolyData.SetPoints(points)
     probe_filter = vtk.vtkProbeFilter()
@@ -154,3 +111,7 @@ def project_wss_derivative(du = 0.001, velocity_file=None, stlfile='c0006.stl', 
         print(output_fn," written")
 
     return merged
+
+
+
+
