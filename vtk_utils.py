@@ -133,7 +133,42 @@ def probe_vti(vti_file='output.vti',point_data=[[0.050640, 0.027959, 0.05213]],f
             return v_interp_on_grid.reshape(shape2d)
         return v_interp_on_grid
 
+def mod_mesh(du, stlfile='c0006.stl',  output_fn='surface.vtp',
+                write=False,sign=1):
+    '''
+    Move stl in normal direction
+    '''
+    stl = getFileReaderOutput(stlfile)
+    vertices = numpy_support.vtk_to_numpy(stl.GetPoints().GetData())
+    indices = numpy_support.vtk_to_numpy(stl.GetPolys().GetData()).reshape(-1, 4)[:, 1:4]
+    
+    merged = vtk.vtkPolyData()
+    merged.DeepCopy(stl)
+    
 
+    # Compute normals to vertices
+    normalGenerator = vtk.vtkPolyDataNormals()
+    normalGenerator.SetInputData(merged)
+    normalGenerator.ComputePointNormalsOn()
+    normalGenerator.ComputeCellNormalsOff()
+    normalGenerator.SetSplitting(0)
+    normalGenerator.SetConsistency(0)
+    normalGenerator.Update()
+
+    merged = normalGenerator.GetOutput()
+    normals = numpy_support.vtk_to_numpy(merged.GetPointData().GetNormals())
+
+    
+    points = vtk.vtkPoints()
+
+    for normal, pos in zip(normals, vertices):
+        points.InsertNextPoint(pos + normal * (-sign*du))
+
+ 
+    merged.SetPoints(points)
+
+
+    return merged
 
 def probe_at_dx(du = 0.001, velocity_file=None, stlfile='c0006.stl',  output_fn='surface.vtp',
                 velocity_name = 'v [m/s]',
