@@ -5,16 +5,6 @@ import vtk
 from vtk.util import numpy_support
 import numpy as np
 
-# VERBOSE
-# To turn verbose on, put following line in your jupyter notebook or main script:
-# logging.getLogger().setLevel(logging.DEBUG)
-#
-# TIMESTAMPS
-# To add timestamps to log messages, copy the following lines:
-# formatter = logging.Formatter('[%(asctime)s] [%(levelname)7s] [%(name)s] %(message)s')
-# for handler in logging.getLogger().handlers:
-#     handler.setFormatter(formatter)
-
 logging.debug(("VTK version:", vtk.VTK_VERSION))
 
 
