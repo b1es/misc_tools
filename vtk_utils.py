@@ -1,3 +1,4 @@
+import os.path
 import logging
 
 import vtk
@@ -24,7 +25,6 @@ logging.debug(("VTK version:", vtk.VTK_VERSION))
 
 
 def read_vtk(path, return_reader=False):
-    import os.path
     path = os.path.abspath(path)
     logging.debug('Reading: "{}".'.format(path))
 
@@ -76,7 +76,6 @@ def save_stl(vtp, path):
 
 
 def _save(input_data, path, writer_type):
-    import os.path
     path = os.path.abspath(path)
     logging.debug('Saving: "{}".'.format(path))
     writer = writer_type()
@@ -165,6 +164,52 @@ def sailfish_vti_to_npy(vti_file, verbose=False, rho_name='rho', v_name='v'):
 
 # endregion
 
+# region SimpleITK interop.
+
+
+def read_sitk(path):
+    import SimpleITK as sitk
+    path = os.path.abspath(path)
+    logging.debug('Reading "{}".'.format(path))
+    return sitk.ReadImage(path)
+
+
+def save_sitk(img_sitk, path):
+    import SimpleITK as sitk
+    path = os.path.abspath(path)
+    logging.debug('Saving "{}".'.format(path))
+    sitk.WriteImage(img_sitk, path, False)
+
+
+def save_sitk_as_vti(img_sitk, path, array_name='data'):
+    vti = sitk_to_vti(img_sitk, array_name)
+    save_vti(vti, path)
+
+
+def sitk_to_vti(img, array_name, array_type=None):
+    import SimpleITK as sitk
+    vti = vtk.vtkImageData()
+    vti.SetSpacing(img.GetSpacing())
+    vti.SetOrigin(img.GetOrigin())
+    vti.SetDimensions(img.GetSize())
+
+    voxels = sitk.GetArrayFromImage(img)
+    arr = numpy_support.numpy_to_vtk(num_array=voxels.ravel(), deep=True, array_type=array_type)
+    arr.SetName(array_name)
+    vti.GetPointData().SetScalars(arr)
+
+    return vti
+
+
+def vti_to_sitk(vti, array):
+    import SimpleITK as sitk
+    arr_np = vti_to_np(vti, array)
+    arr_sitk = sitk.GetImageFromArray(arr_np)
+    arr_sitk.SetOrigin(vti.GetOrigin())
+    arr_sitk.SetSpacing(vti.GetSpacing())
+    return arr_sitk
+
+# endregion
 
 # region Some strange functions
 
