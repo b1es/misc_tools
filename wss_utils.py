@@ -1,28 +1,27 @@
 import vtk
 import numpy as np
-import os
 
 from vtk.util import numpy_support
 
-from vtk_utils import stlImageActor, vtlImageActor, unstructuredImage, getFileReaderOutput
+from vtk_utils import read_vtk
 
 
 
 
-def project_wss_derivative(du = 0.001, velocity_file=None, stlfile='c0006.stl',  output_fn='surface.vtp',\
-                           velocity_name = 'v [m/s]',\
+def project_wss_derivative(du = 0.001, velocity_file=None, stlfile='c0006.stl',  output_fn='surface.vtp',
+                           velocity_name = 'v [m/s]',
                            write=False, mu=1.0, move_mesh=False, sign=1):
     '''
     Equidistant points from stl in normal direction
     Takes stl and vtu/vti and generates vtp  
     '''
-    stl = stlImageActor(stlfile)
+    stl = read_vtk(stlfile)
     vertices = numpy_support.vtk_to_numpy(stl.GetPoints().GetData())
     indices = numpy_support.vtk_to_numpy(stl.GetPolys().GetData()).reshape(-1, 4)[:, 1:4]
     merged = vtk.vtkPolyData()
     merged.DeepCopy(stl)
     
-    vel_data = getFileReaderOutput(velocity_file)
+    vel_data = read_vtk(velocity_file)
     #vfm = getFileReaderOutput(fvmfile)
     
 
