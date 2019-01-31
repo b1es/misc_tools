@@ -62,7 +62,7 @@ def probe_vtu(vtu_file='output.vtu', point_data=[[0.050640, 0.027959, 0.05213]],
     # out.GetBounds()
     # to get points: numpy_support.vtk_to_numpy(out.GetPoints().GetData()).shape
     pd = out.GetAttributesAsFieldData(0)
-    if fname == None:
+    if fname is None:
         # all fields
         output = dict()
         for i in range(pd.GetNumberOfArrays()):
@@ -111,7 +111,7 @@ def probe_vti(vti_file='output.vti', point_data=[[0.050640, 0.027959, 0.05213]],
     # out.GetBounds()
     # to get points: numpy_support.vtk_to_numpy(out.GetPoints().GetData()).shape
     pd = out.GetAttributesAsFieldData(0)
-    if fname == None:
+    if fname is None:
         # all fields
         output = dict()
         for i in range(pd.GetNumberOfArrays()):
@@ -314,7 +314,7 @@ def scale_and_trans(vtk_data=None, output=None,
     transformFilter.SetTransform(transform)
     transformFilter.SetInputData(vtk_data)
     transformFilter.Update()
-    if output == None:
+    if output is None:
         return transformFilter.GetOutput()
     else:
         writer = vtk.vtkXMLUnstructuredGridWriter()
