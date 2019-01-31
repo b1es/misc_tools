@@ -1,5 +1,12 @@
 ## Tips and tricks
 
+#### Adding this repository to a project
+
+The easiest way is to use git's submodules feature:
+```git
+git submodule add git@github.com:marcinofulus/misc_tools.git misc_tools
+```
+
 #### Logging vs print and jupyter notebooks
 
 Because this module can be imported to some non-jupyter project, it's good 
