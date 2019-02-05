@@ -88,10 +88,10 @@ def vti_to_np(vti, array, components=1):
     x, y, z = vti.GetDimensions()
     arr_np = numpy_support.vtk_to_numpy(vti.GetPointData().GetArray(array))
     if components == 1:
-        arr_np.reshape(z, y, x)
+        return arr_np.reshape(z, y, x)
     else:
-        arr_np.reshape(z, y, x, components)
-    return arr_np
+        return arr_np.reshape(z, y, x, components)
+
 
 
 def vtp_to_np(vtp, arrays):
