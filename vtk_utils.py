@@ -36,11 +36,17 @@ def read_vtk(path, return_reader=False):
         reader = vtk.vtkXMLUnstructuredGridReader()
         reader.SetFileName(path)
 
+    elif file_extension.endswith(".mhd"):
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName(path)
+
     elif file_extension.endswith(".vtk"):
         reader = vtk.vtkUnstructuredGridReader()
         reader.SetFileName(path)
         reader.ReadAllVectorsOn()
         reader.ReadAllScalarsOn()
+    else:
+        raise Exception("Unsupported file extension.")
 
     reader.Update()
 
