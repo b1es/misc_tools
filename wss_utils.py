@@ -15,7 +15,11 @@ def project_wss_derivative(du = 0.001, velocity_file=None, stlfile='c0006.stl', 
     Equidistant points from stl in normal direction
     Takes stl and vtu/vti and generates vtp  
     '''
-    stl = read_vtk(stlfile)
+
+    if type(stlfile) is str:
+        stl = read_vtk(stlfile)
+    else:
+        stl = stlfile
     vertices = numpy_support.vtk_to_numpy(stl.GetPoints().GetData())
     indices = numpy_support.vtk_to_numpy(stl.GetPolys().GetData()).reshape(-1, 4)[:, 1:4]
     merged = vtk.vtkPolyData()
