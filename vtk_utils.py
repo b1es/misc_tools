@@ -429,4 +429,23 @@ def scale_and_trans(vtk_data=None, output=None,
     else:
         save_vtu(transformFilter.GetOutput(), output)
 
+
+def decimate(vtkobj, reduction=0.8, output_file=None):
+
+    if type(vtkobj) is str:
+        vtkobj = read_vtk(vtkobj)
+
+    decimate = vtk.vtkDecimatePro()
+    decimate.SetInputData(vtkobj)
+    decimate.SetTargetReduction(reduction)
+    decimate.Update()
+    
+    if output_file:
+        raise NotImplementedError("todo!")
+    else:
+        return decimate.GetOutput()
+    
+   
+
+        
 # endregion
