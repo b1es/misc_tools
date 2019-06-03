@@ -207,6 +207,43 @@ def vti_to_sitk(vti, array):
 
 # endregion
 
+def vti2vtu(vti, threshold = 0.1,field = 'rho', output_file=None):
+    """ 
+    
+    Returns unstructured grid for existing voxels based on threshold filtering
+    output: file or vtk object
+     - highly inefficient - allocates a full geometry before threshold
+    """
+
+    p2c = vtk.vtkPointDataToCellData()
+    p2c.SetInputData(vti)
+    p2c.PassPointDataOn()
+    p2c.Update()
+    
+
+    t = vtk.vtkThreshold() 
+
+    t.SetInputData(p2c.GetOutput()) 
+    t.ThresholdByUpper(threshold) 
+    t.SetInputArrayToProcess(0,0,0,0,field)
+    t.Update() 
+    
+
+    print('# of Cells (unstructured):', t.GetOutput().GetNumberOfCells(),
+         'vs. vti: ',vti.GetNumberOfPoints()) 
+
+
+    if output_file:
+        sw = vtk.vtkXMLUnstructuredGridWriter() 
+        sw.SetFileName(output_file) 
+        sw.SetInputData(t.GetOutput()) 
+        sw.Write()
+    else:
+        return t.GetOutput()
+    
+            
+
+
 # region Some strange functions
 
 
