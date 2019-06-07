@@ -158,6 +158,20 @@ def sailfish_vti_to_npy(vti_file, verbose=False, rho_name='rho', v_name='v'):
 
     return data_rho, data_v
 
+
+def np_to_vti(arr_np, spacing=(1,1,1), array_name='data'):
+    """
+    Create vti object and add numpy data
+    """
+    imageData = vtk.vtkImageData()
+    ndim = arr_np.ndim
+    shape = [1] * 3
+    shape[:ndim] = arr_np.shape[:]
+    imageData.SetDimensions(*tuple(shape))
+    imageData.SetSpacing(*spacing)
+    add_np_to_vti(imageData, arr_np, array_name)
+    return imageData
+
 # endregion
 
 # region SimpleITK interop.
