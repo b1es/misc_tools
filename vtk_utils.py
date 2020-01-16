@@ -247,8 +247,7 @@ def vti2vtu(vti, threshold = 0.1,field = 'rho', output_file=None):
 # region Some strange functions
 
 
-def probe_vtu(vtu_file='output.vtu', point_data=[[0.050640, 0.027959, 0.05213]], fname=None, shape2d=None,
-              verbose=False):
+def probe_vtu(vtu_file='output.vtu', point_data=[[0.050640, 0.027959, 0.05213]], fname=None, shape2d=None, verbose=False):
     """
     get values of interpolated from vtu mesh on the set of points (N,3)
     """
@@ -292,12 +291,14 @@ def probe_vtu(vtu_file='output.vtu', point_data=[[0.050640, 0.027959, 0.05213]],
         return v_interp_on_grid
 
 
-def probe_vti(vti_file='output.vti', point_data=[[0.050640, 0.027959, 0.05213]], fname=None, shape2d=None,
-              verbose=False):
+def probe_vti(vti_file='output.vti', point_data=[[0.050640, 0.027959, 0.05213]], fname=None, shape2d=None, verbose=False):
     """
     get values of interpolated from vti file mesh on the set of points (N,3)
     """
-    vti = read_vtk(vti_file)
+    if type(vti_file) is str:
+        vti = read_vtk(vti_file)
+    else:
+        vti = vti_file
 
     points = vtk.vtkPoints()
     for point in point_data:
@@ -315,7 +316,8 @@ def probe_vti(vti_file='output.vti', point_data=[[0.050640, 0.027959, 0.05213]],
     # out.GetBounds()
     # to get points: numpy_support.vtk_to_numpy(out.GetPoints().GetData()).shape
     pd = out.GetAttributesAsFieldData(0)
-    log = logging.getLogger(vti_file)
+    if verbose:
+        log = logging.getLogger(vti_file)
     if fname is None:
         # all fields
         output = dict()
@@ -323,14 +325,16 @@ def probe_vti(vti_file='output.vti', point_data=[[0.050640, 0.027959, 0.05213]],
             v_interp_on_grid = numpy_support.vtk_to_numpy(pd.GetArray(i))
             if shape2d:
                 v_interp_on_grid = v_interp_on_grid.reshape(shape2d)
-            log.debug(("appending in output:", pd.GetArrayName(i)))
+            if verbose:
+                log.debug(("appending in output:", pd.GetArrayName(i)))
             output[pd.GetArrayName(i)] = v_interp_on_grid
         assert (len(output) > 0)
         return output
     else:
         field_numbers = [i for i in range(pd.GetNumberOfArrays()) if pd.GetArrayName(i) == fname]
         assert (len(field_numbers) == 1)
-        log.debug(("output:", pd.GetArrayName(field_numbers[0])))
+        if verbose:
+            log.debug(("output:", pd.GetArrayName(field_numbers[0])))
         v_interp_on_grid = numpy_support.vtk_to_numpy(pd.GetArray(field_numbers[0]))
         if shape2d:
             return v_interp_on_grid.reshape(shape2d)
