@@ -18,3 +18,26 @@ def get_diam_phys_parametrized(data, value, spacing):
     from skimage.measure import regionprops
     props = regionprops(inflow)[0]
     return props.equivalent_diameter * spacing, props.eccentricity
+
+
+def coords_transform(coordinates, origin, spacing, mode):
+    """
+    Transform ijk into xyz or vice versa.
+    :param coordinates: 1D or 2D array of coordinates
+    :param mode: 'ijk_to_xyz' or 'xyz_to_ijk'
+    """
+    if mode not in ['ijk_to_xyz', 'xyz_to_ijk']:
+        raise ValueError('Wrong mode')
+        
+    if mode == 'ijk_to_xyz':
+        data = np.array(origin) + np.array(spacing) * np.array(coordinates).reshape((-1, 3))[:,::-1]
+        if np.array(coordinates).ndim == 1:
+            data = np.squeeze(data)
+        return data
+    if mode == 'xyz_to_ijk':
+        data = np.rint(
+                ((np.array(coordinates).reshape((-1, 3)) - np.array(origin)) / np.array(spacing))[:,::-1]
+               ).astype(np.int)
+        if np.array(coordinates).ndim == 1:
+            data = np.squeeze(data)
+        return data
